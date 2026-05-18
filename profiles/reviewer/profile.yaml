@@ -1,0 +1,2 @@
+description: "Revisor automático. Aprueba o rechaza el trabajo del implementador comparándolo contra docs/*.md y CHECKPOINTS.md."
+description_auto: false
