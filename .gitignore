@@ -36,3 +36,8 @@ auth.*
 .hermes_history
 .skills_prompt_snapshot.json
 .update_check
+spawn*
+.clean*
+channel_*
+gateway_*
+plugins/
