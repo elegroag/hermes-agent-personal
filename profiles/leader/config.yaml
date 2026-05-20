@@ -1,30 +1,36 @@
 model:
+  base_url: ''
   default: MiniMax-M2.7
   provider: minimax
-  base_url: https://api.minimax.io/anthropic
-providers: {}
+providers:
+  minimax:
+    max_retries: 3
+    retry_delay: 1
+    timeout: 120
 fallback_providers: []
 credential_pool_strategies: {}
 toolsets:
   - hermes-cli
 agent:
-  max_turns: 120
-  gateway_timeout: 1800
-  restart_drain_timeout: 180
-  api_max_retries: 3
+  max_turns: 150
+  gateway_timeout: 2400
+  restart_drain_timeout: 300
+  api_max_retries: 4
   service_tier: ''
   tool_use_enforcement: auto
-  gateway_timeout_warning: 900
-  clarify_timeout: 600
-  gateway_notify_interval: 180
-  gateway_auto_continue_freshness: 3600
+  gateway_timeout_warning: 1200
+  clarify_timeout: 300
+  gateway_notify_interval: 120
+  gateway_auto_continue_freshness: 1800
   image_input_mode: auto
   disabled_toolsets: []
-  system_prompt: You are a coder agent. Follow SOUL.md. Implement features, write tests, verify your work. Keep responses concise.
+  system_prompt:
+    You are a technical expert. Provide detailed, accurate technical
+    information.
 terminal:
   backend: local
   modal_mode: auto
-  cwd: /home/elegro/proyectos
+  cwd: .
   timeout: 300
   env_passthrough: []
   shell_init_files: []
@@ -36,9 +42,9 @@ terminal:
   modal_image: nikolaik/python-nodejs:python3.11-nodejs20
   daytona_image: nikolaik/python-nodejs:python3.11-nodejs20
   vercel_runtime: node24
-  container_cpu: 1
-  container_memory: 5120
-  container_disk: 51200
+  container_cpu: 4
+  container_memory: 16384
+  container_disk: 102400
   container_persistent: true
   docker_volumes: []
   docker_mount_cwd_to_workspace: false
@@ -82,16 +88,16 @@ tool_loop_guardrails:
   warnings_enabled: true
   hard_stop_enabled: true
   warn_after:
-    exact_failure: 2
-    same_tool_failure: 2
-    idempotent_no_progress: 2
-  hard_stop_after:
-    exact_failure: 4
+    exact_failure: 3
     same_tool_failure: 5
     idempotent_no_progress: 4
+  hard_stop_after:
+    exact_failure: 8
+    same_tool_failure: 12
+    idempotent_no_progress: 8
 compression:
   enabled: true
-  threshold: 0.3
+  threshold: 0.5
   target_ratio: 0.15
   protect_last_n: 10
   hygiene_hard_message_limit: 300
@@ -115,59 +121,59 @@ bedrock:
     trace: disabled
 auxiliary:
   vision:
-    provider: auto
-    model: ''
+    provider: minimax
+    model: MiniMax-M2.7
     base_url: ''
     api_key: ''
     timeout: 120
     extra_body: {}
     download_timeout: 30
   web_extract:
-    provider: auto
-    model: ''
+    provider: minimax
+    model: MiniMax-M2.7
     base_url: ''
     api_key: ''
     timeout: 360
     extra_body: {}
   compression:
-    provider: auto
-    model: ''
+    provider: minimax
+    model: MiniMax-M2.7
     base_url: ''
     api_key: ''
     timeout: 120
     extra_body: {}
   session_search:
-    provider: auto
-    model: ''
+    provider: minimax
+    model: MiniMax-M2.7
     base_url: ''
     api_key: ''
     timeout: 30
     extra_body: {}
     max_concurrency: 3
   skills_hub:
-    provider: auto
-    model: ''
+    provider: minimax
+    model: MiniMax-M2.7
     base_url: ''
     api_key: ''
     timeout: 30
     extra_body: {}
   approval:
-    provider: auto
-    model: ''
+    provider: minimax
+    model: MiniMax-M2.7
     base_url: ''
     api_key: ''
     timeout: 30
     extra_body: {}
   mcp:
-    provider: auto
-    model: ''
+    provider: minimax
+    model: MiniMax-M2.7
     base_url: ''
     api_key: ''
     timeout: 30
     extra_body: {}
   title_generation:
-    provider: auto
-    model: ''
+    provider: minimax
+    model: MiniMax-M2.7
     base_url: ''
     api_key: ''
     timeout: 30
@@ -194,29 +200,29 @@ auxiliary:
     timeout: 60
     extra_body: {}
   curator:
-    provider: auto
-    model: ''
+    provider: minimax
+    model: MiniMax-M2.7
     base_url: ''
     api_key: ''
     timeout: 600
     extra_body: {}
 display:
   compact: true
-  personality: kawaii
+  personality: technical
   resume_display: full
   busy_input_mode: interrupt
   tui_auto_resume_recent: false
   bell_on_complete: false
   show_reasoning: false
-  streaming: false
+  streaming: true
   timestamps: false
   final_response_markdown: strip
   persistent_output: true
-  persistent_output_max_lines: 200
+  persistent_output_max_lines: 500
   inline_diffs: true
   file_mutation_verifier: true
   show_cost: true
-  skin: default
+  skin: charizard
   language: en
   tui_status_indicator: kaomoji
   user_message_preview:
@@ -225,7 +231,7 @@ display:
   interim_assistant_messages: true
   tool_progress_command: false
   tool_progress_overrides: {}
-  tool_preview_length: 0
+  tool_preview_length: 200
   ephemeral_system_ttl: 0
   platforms: {}
   runtime_footer:
@@ -235,7 +241,6 @@ display:
       - context_pct
       - cwd
   copy_shortcut: auto
-  tool_progress: all
 dashboard:
   theme: default
   show_token_analytics: false
@@ -292,8 +297,8 @@ context:
 memory:
   memory_enabled: true
   user_profile_enabled: true
-  memory_char_limit: 2200
-  user_char_limit: 1375
+  memory_char_limit: 8000
+  user_char_limit: 5000
   provider: ''
 delegation:
   model: ''
@@ -313,7 +318,8 @@ prefill_messages_file: ''
 goals:
   max_turns: 20
 skills:
-  external_dirs: []
+  external_dirs:
+    - ~/.agents/skills
   template_vars: true
   inline_shell: false
   inline_shell_timeout: 10
@@ -388,7 +394,7 @@ security:
   allow_lazy_installs: true
 cron:
   wrap_response: true
-  max_parallel_jobs:
+  max_parallel_jobs: null
 kanban:
   dispatch_in_gateway: true
   dispatch_interval_seconds: 60
@@ -401,10 +407,10 @@ code_execution:
   mode: project
 logging:
   level: WARNING
-  max_size_mb: 5
-  backup_count: 3
+  max_size_mb: 10
+  backup_count: 2
   memory_monitor:
-    enabled: true
+    enabled: false
     interval_seconds: 300
 model_catalog:
   enabled: true
@@ -412,10 +418,10 @@ model_catalog:
   ttl_hours: 24
   providers: {}
 network:
-  force_ipv4: false
+  force_ipv4: true
 sessions:
-  auto_prune: false
-  retention_days: 90
+  auto_prune: true
+  retention_days: 30
   vacuum_after_prune: true
   min_interval_hours: 24
 onboarding:
@@ -434,58 +440,52 @@ x_search:
   timeout_seconds: 180
   retries: 2
 _config_version: 23
-session_reset:
-  mode: both
-  idle_minutes: 1440
 mcp_servers:
-  filesystem:
+  backbone-doc-resource:
     args:
-    - -y
-    - '@modelcontextprotocol/server-filesystem'
-    - /home/elegro/proyectos/
-    - /home/elegro/Downloads
+      - -y
+      - tsx
+      - ${HOME_USER}/Mcp/Backbone/src/server.ts
     command: npx
-  github:
-    args:
-    - -y
-    - '@modelcontextprotocol/server-github'
-    command: npx
-    env:
-      GITHUB_PERSONAL_ACCESS_TOKEN: xxxx
   bash:
     args:
-    - bash-mcp
+      - bash-mcp
     command: npx
     env:
       BASH_MCP_MAX_OUTPUT_SIZE: '102400'
-      BASH_MCP_TEMP_DIR: /home/elegro/Downloads
+      BASH_MCP_TEMP_DIR: '${HOME_USER}/Downloads'
   chrome-devtools:
     args:
-    - -y
-    - chrome-devtools-mcp@latest
-    - --slim
-    - --headless
+      - -y
+      - chrome-devtools-mcp@latest
+      - --slim
+      - --headless
     command: npx
-  at_hour: 4
-
-# ── Fallback Model ────────────────────────────────────────────────────
-# Automatic provider failover when primary is unavailable.
-# Uncomment and configure to enable. Triggers on rate limits (429),
-# overload (529), service errors (503), or connection failures.
-#
-# Supported providers:
-#   openrouter   (OPENROUTER_API_KEY)  — routes to any model
-#   openai-codex (OAuth — hermes auth) — OpenAI Codex
-#   nous         (OAuth — hermes auth) — Nous Portal
-#   zai          (ZAI_API_KEY)         — Z.AI / GLM
-#   kimi-coding  (KIMI_API_KEY)        — Kimi / Moonshot
-#   kimi-coding-cn (KIMI_CN_API_KEY)   — Kimi / Moonshot (China)
-#   minimax      (MINIMAX_API_KEY)     — MiniMax
-#   minimax-cn   (MINIMAX_CN_API_KEY)  — MiniMax (China)
-#   bedrock      (AWS IAM / boto3)     — AWS Bedrock (Converse API)
-#
-# For custom OpenAI-compatible endpoints, add base_url and key_env.
-#
-# fallback_model:
-#   provider: openrouter
-#   model: anthropic/claude-sonnet-4
+  context7:
+    args:
+      - context7 uses streamable-http - configured via headers inHermes
+    command: echo
+    headers:
+      Authorization: 'Bearer ${CONTEXT7_API_KEY}'
+    url: https://mcp.context7.com/mcp
+  filesystem:
+    args:
+      - -y
+      - '@modelcontextprotocol/server-filesystem'
+      - ${HOME_USER}/proyectos/
+      - ${HOME_USER}/Downloads
+    command: npx
+  github:
+    args:
+      - -y
+      - '@modelcontextprotocol/server-github'
+    command: npx
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: '${GITHUB_TOKEN}'
+  memory:
+    args:
+      - -y
+      - '@modelcontextprotocol/server-memory'
+    command: npx
+    env:
+      MEMORY_FILE_PATH: '${HOME_USER}/Mcp/memory.json'

@@ -1,12 +1,12 @@
 model:
-  default: MiniMax-M2.7
+  default: MiniMax-M2.7-highspeed
   provider: minimax
   base_url: https://api.minimax.io/anthropic
 providers: {}
 fallback_providers: []
 credential_pool_strategies: {}
 toolsets:
-- hermes-cli
+  - hermes-cli
 agent:
   max_turns: 90
   gateway_timeout: 1800
@@ -20,10 +20,11 @@ agent:
   gateway_auto_continue_freshness: 3600
   image_input_mode: auto
   disabled_toolsets: []
+  system_prompt: You are a concise assistant. Keep responses brief and to the point.
 terminal:
   backend: local
   modal_mode: auto
-  cwd: /home/elegro/proyectos
+  cwd: ${HOME_USER}/proyectos
   timeout: 180
   env_passthrough: []
   shell_init_files: []
@@ -230,9 +231,9 @@ display:
   runtime_footer:
     enabled: false
     fields:
-    - model
-    - context_pct
-    - cwd
+      - model
+      - context_pct
+      - cwd
   copy_shortcut: auto
   tool_progress: all
 dashboard:
@@ -387,7 +388,7 @@ security:
   allow_lazy_installs: true
 cron:
   wrap_response: true
-  max_parallel_jobs: null
+  max_parallel_jobs:
 kanban:
   dispatch_in_gateway: true
   dispatch_interval_seconds: 60
@@ -439,58 +440,23 @@ session_reset:
 mcp_servers:
   filesystem:
     args:
-    - -y
-    - '@modelcontextprotocol/server-filesystem'
-    - /home/elegro/proyectos/
-    - /home/elegro/Downloads
+      - -y
+      - '@modelcontextprotocol/server-filesystem'
+      - ${HOME_USER}/proyectos/
+      - ${HOME_USER}/Downloads
     command: npx
   github:
     args:
-    - -y
-    - '@modelcontextprotocol/server-github'
+      - -y
+      - '@modelcontextprotocol/server-github'
     command: npx
     env:
-      GITHUB_PERSONAL_ACCESS_TOKEN: xxxx
+      GITHUB_PERSONAL_ACCESS_TOKEN: '${GITHUB_TOKEN}'
   memory:
     args:
-    - -y
-    - '@modelcontextprotocol/server-memory'
+      - -y
+      - '@modelcontextprotocol/server-memory'
     command: npx
     env:
-      MEMORY_FILE_PATH: /home/elegro/Mcp/memory.json
-  context7:
-    args:
-    - context7 uses streamable-http - configured via headers inHermes
-    command: echo
-    headers:
-      Authorization: Bearer xxxx
-    url: https://mcp.context7.com/mcp
-  backbone-doc-resource:
-    args:
-    - -y
-    - tsx
-    - /home/elegro/Mcp/Backbone/src/server.ts
-    command: npx
+      MEMORY_FILE_PATH: ${HOME_USER}/Mcp/memory.json
   at_hour: 4
-
-# ── Fallback Model ────────────────────────────────────────────────────
-# Automatic provider failover when primary is unavailable.
-# Uncomment and configure to enable. Triggers on rate limits (429),
-# overload (529), service errors (503), or connection failures.
-#
-# Supported providers:
-#   openrouter   (OPENROUTER_API_KEY)  — routes to any model
-#   openai-codex (OAuth — hermes auth) — OpenAI Codex
-#   nous         (OAuth — hermes auth) — Nous Portal
-#   zai          (ZAI_API_KEY)         — Z.AI / GLM
-#   kimi-coding  (KIMI_API_KEY)        — Kimi / Moonshot
-#   kimi-coding-cn (KIMI_CN_API_KEY)   — Kimi / Moonshot (China)
-#   minimax      (MINIMAX_API_KEY)     — MiniMax
-#   minimax-cn   (MINIMAX_CN_API_KEY)  — MiniMax (China)
-#   bedrock      (AWS IAM / boto3)     — AWS Bedrock (Converse API)
-#
-# For custom OpenAI-compatible endpoints, add base_url and key_env.
-#
-# fallback_model:
-#   provider: openrouter
-#   model: anthropic/claude-sonnet-4

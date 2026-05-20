@@ -17,12 +17,13 @@ sessions/
 skills/
 state-snapshots/
 .env
-config.yaml
+
 processes.json
 ollama_*
 models_*
 
 # Keep config and SOUL files
+!config.yaml
 !profiles/**/config.yaml.optimized
 !profiles/**/SOUL.md
 !.gitignore
