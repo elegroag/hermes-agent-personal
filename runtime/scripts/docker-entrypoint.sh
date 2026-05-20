@@ -155,13 +155,68 @@ validate_config() {
 
 # ── Función: mostrar banner de inicio ───────────────────────
 show_banner() {
+    local version
+    version=$(/opt/hermes/.venv/bin/hermes --version 2>/dev/null | head -1 || echo "v0.14.0")
+
     echo ""
     echo -e "${BLUE}╔══════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║       Hermes Agent v0.14.0 (2026.5.16)       ║${NC}"
+    echo -e "${BLUE}║       Hermes Agent ${version} (2026.5.19)       ║${NC}"
     echo -e "${BLUE}║       Perfil: ${GREEN}${HERMES_PROFILE}${BLUE}$(printf '%*s' $((29 - ${#HERMES_PROFILE})) '')║${NC}"
     echo -e "${BLUE}║       Data:   ${HERMES_HOME}$(printf '%*s' $((29 - ${#HERMES_HOME})) '')║${NC}"
     echo -e "${BLUE}╚══════════════════════════════════════════════╝${NC}"
     echo ""
+}
+
+# ── Función: configurar .bashrc del usuario ───────────────────
+configure_bashrc() {
+    local bashrc="${HOME}/.bashrc"
+
+    cat > "${bashrc}" << 'BASHRCEOF'
+# ── NVM ────────────────────────────────────────────────────────
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
+
+# ── rbenv ──────────────────────────────────────────────────────
+export RBENV_ROOT="$HOME/.rbenv"
+export PATH="$RBENV_ROOT/shims:$RBENV_ROOT/bin:$PATH"
+command -v rbenv &>/dev/null && eval "$(rbenv init - bash)"
+
+# ── Python / uv ───────────────────────────────────────────────
+export PATH="$HOME/.local/bin:$PATH"
+export PYTHONUNBUFFERED=1
+
+# ── Hermes Agent ─────────────────────────────────────────────
+export PATH="/opt/hermes/.venv/bin:$PATH"
+export HERMES_HOME="${HERMES_HOME:-/opt/data}"
+
+# ── Workspace ─────────────────────────────────────────────────
+export WORKSPACE="/workspace"
+alias cdw="cd $WORKSPACE" 2>/dev/null || true
+
+# ── Aliases ───────────────────────────────────────────────────
+alias ll="ls -lah --color=auto" 2>/dev/null || true
+alias gs="git status" 2>/dev/null || true
+alias glog="git log --oneline --graph --decorate" 2>/dev/null || true
+alias py="python3" 2>/dev/null || true
+
+# ── Banner (solo en shells interactivos) ─────────────────────
+if [ -n "$PS1" ] && [ -z "$HERMES_NO_BANNER" ]; then
+    echo ""
+    echo "  Hermes Agent Dev Environment"
+    echo "  ─────────────────────────────────────────────────"
+    echo "  Python:  $(python3 --version 2>/dev/null || echo 'N/A')"
+    echo "  Node:    $(node --version 2>/dev/null || echo 'N/A')"
+    echo "  Ruby:    $(ruby --version 2>/dev/null | cut -d' ' -f1-2 || echo 'N/A')"
+    echo "  uv:      $(uv --version 2>/dev/null || echo 'N/A')"
+    echo "  Perfil:  ${HERMES_PROFILE:-default}"
+    echo "  Workspace: $WORKSPACE"
+    echo "  ─────────────────────────────────────────────────"
+    echo ""
+fi
+BASHRCEOF
+
+    log_ok ".bashrc configurado"
 }
 
 # ── Main ────────────────────────────────────────────────────
@@ -169,6 +224,7 @@ main() {
     show_banner
 
     if [[ "${SKIP_INIT}" != "true" ]]; then
+        configure_bashrc
         initialize_profile
         sync_env_file
         validate_config

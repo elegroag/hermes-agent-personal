@@ -1,131 +1,148 @@
-# ============================================================
-# Hermes Agent — Docker Compose Multi-Perfil
-# Versión: 0.14.0 (2026.5.16)
+# ==============================================================
+# Hermes Agent — Docker Compose Multi-Agente
+# Versión: 0.15.0 (2026.05.19)
 #
-# ARQUITECTURA:
-#   Un contenedor por perfil de agente (patrón oficial)
-#   Cada agente tiene su propio volumen /opt/data aislado
+# EQUIPO DE AGENTES:
+#   leader      → Orquestador vía Kanban (siempre activo)
+#   coder       → Implementador full-stack
+#   researcher  → Investigación y análisis técnico
+#   assistant   → Soporte operativo y documentación
+#   reviewer    → Quality Gate — revisión de código
 #
-# PERFILES DE COMPOSE (--profile):
-#   • (sin flag)     → solo hermes-default
-#   • --profile coder        → default + agente coder
-#   • --profile researcher   → default + agente researcher
-#   • --profile assistant    → default + agente assistant
-#   • --profile proxy        → habilita nginx reverse-proxy
-#   • --profile monitoring   → habilita panel de dashboards
-#   • --profile all          → todos los agentes + proxy
+# PERFILES DOCKER COMPOSE (--profile):
+#   (ninguno)              → solo hermes-leader
+#   --profile coder        → leader + coder
+#   --profile researcher   → leader + researcher
+#   --profile assistant    → leader + assistant
+#   --profile reviewer     → leader + reviewer
+#   --profile team         → todos los agentes
+#   --profile full         → todos los agentes + proxy
 #
-# USO:
-#   docker compose up -d                            # solo default
-#   docker compose --profile coder up -d            # default + coder
-#   docker compose --profile all --profile proxy up -d   # todo
-# ============================================================
+# EJEMPLOS DE USO:
+#   docker compose up -d
+#   docker compose --profile team up -d
+#   docker compose --profile full up -d
+#   docker compose --profile coder --profile reviewer up -d
+#
+# NGINX:
+#   Regenerar config: ./scripts/generate-nginx-conf.sh
+# ==============================================================
+
+# ── Fragmento reutilizable: build común ─────────────────────
+x-hermes-build: &hermes-build
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      NODE_VERSION: "22"
+      NVM_VERSION: "0.40.1"
+      RUBY_VERSION: "3.3.6"
+      USERNAME: "hermes"
+      USER_UID: "1000"
+      USER_GID: "1000"
+  image: hermes-agent-custom:latest
+
+# ── Fragmento reutilizable: variables LLM compartidas ────────
+x-hermes-llm: &hermes-llm
+  ANTHROPIC_API_KEY:  ${ANTHROPIC_API_KEY:-}
+  OPENAI_API_KEY:     ${OPENAI_API_KEY:-}
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+
+# ── Fragmento reutilizable: MCP servers env vars ──────────────
+x-hermes-mcp: &hermes-mcp
+  GITHUB_TOKEN:          ${GITHUB_TOKEN:-}
+  CONTEXT7_API_KEY:      ${CONTEXT7_API_KEY:-}
+  MEMORY_FILE_PATH:      ${MEMORY_FILE_PATH:-/home/elegro/Mcp/memory.json}
+  BACKBONE_DOC_RESOURCE_PATH: ${BACKBONE_DOC_RESOURCE_PATH:-/home/elegro/Mcp/Backbone/src/server.ts}
+  BASH_MCP_MAX_OUTPUT_SIZE: ${BASH_MCP_MAX_OUTPUT_SIZE:-102400}
+  BASH_MCP_TEMP_DIR:     ${BASH_MCP_TEMP_DIR:-/home/elegro/Downloads}
+
+# ── Fragmento reutilizable: configuración de gateway ─────────
+x-hermes-gateway: &hermes-gateway
+  API_SERVER_ENABLED:      "true"
+  API_SERVER_HOST:         "0.0.0.0"
+  API_SERVER_PORT:         "8642"
+  API_SERVER_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost}
+  API_SERVER_KEY:         ${API_SERVER_KEY:-}
+  HERMES_DASHBOARD:        ${HERMES_DASHBOARD:-1}
+  HERMES_DASHBOARD_HOST:   "0.0.0.0"
+  HERMES_DASHBOARD_PORT:   "9119"
+
+# ── Fragmento reutilizable: healthcheck mejorado ─────────────
+x-hermes-healthcheck: &hermes-healthcheck
+  test: ["CMD", "/opt/healthcheck.sh"]
+  interval: 30s
+  timeout: 10s
+  start_period: 90s
+  retries: 3
+
+# ── Fragmento reutilizable: logging ──────────────────────────
+x-hermes-logging: &hermes-logging
+  driver: "json-file"
+  options:
+    max-size: "20m"
+    max-file: "5"
 
 services:
 
-  # ──────────────────────────────────────────────────────────
-  # AGENTE DEFAULT — siempre activo, agente principal
+  # ============================================================
+  # LÍDER — Orquestador principal vía Kanban
+  # Siempre activo. Es el punto de entrada del equipo.
   # Puerto host: 8642 (API) | 9119 (Dashboard)
-  # ──────────────────────────────────────────────────────────
-  hermes-default:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: hermes-agent-custom:latest
-    container_name: hermes-default
-    hostname: hermes-default
+  # ============================================================
+  hermes-leader:
+    <<: *hermes-build
+    container_name: hermes-leader
+    hostname: hermes-leader
     restart: unless-stopped
     command: gateway run
 
     environment:
-      # ── Identidad del perfil ──
-      HERMES_PROFILE: "default"
-      HERMES_HOME: "/opt/data"
-
-      # ── API Keys (se leen de .env en el host) ──
-      ANTHROPIC_API_KEY:  ${ANTHROPIC_API_KEY:-}
-      OPENAI_API_KEY:     ${OPENAI_API_KEY:-}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-
-      # ── Gateway API Server ──
-      API_SERVER_ENABLED: "true"
-      API_SERVER_HOST:    "0.0.0.0"
-      API_SERVER_PORT:    "8642"
-      API_SERVER_KEY:     ${HERMES_DEFAULT_API_KEY:?Requerido: HERMES_DEFAULT_API_KEY}
-      API_SERVER_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost}
-
-      # ── Dashboard web ──
-      HERMES_DASHBOARD:      ${HERMES_DASHBOARD:-1}
-      HERMES_DASHBOARD_HOST: "0.0.0.0"
-      HERMES_DASHBOARD_PORT: "9119"
-
-      # ── Plataformas de mensajería (configurar según necesidad) ──
-      TELEGRAM_TOKEN:  ${HERMES_DEFAULT_TELEGRAM_TOKEN:-}
-      DISCORD_TOKEN:   ${HERMES_DEFAULT_DISCORD_TOKEN:-}
-      SLACK_BOT_TOKEN: ${HERMES_DEFAULT_SLACK_TOKEN:-}
+      <<: [*hermes-llm, *hermes-mcp, *hermes-gateway]
+      HERMES_PROFILE: "leader"
+      HERMES_HOME:    "/opt/data"
+      TELEGRAM_TOKEN:  ${HERMES_LEADER_TELEGRAM_TOKEN:-}
+      DISCORD_TOKEN:   ${HERMES_LEADER_DISCORD_TOKEN:-}
+      SLACK_BOT_TOKEN: ${HERMES_LEADER_SLACK_TOKEN:-}
 
     ports:
-      - "${HERMES_DEFAULT_API_PORT:-8642}:8642"
-      - "${HERMES_DEFAULT_DASH_PORT:-9119}:9119"
+      - "${HERMES_LEADER_API_PORT:-8642}:8642"
+      - "${HERMES_LEADER_DASH_PORT:-9119}:9119"
 
     volumes:
-      # Datos persistentes del agente default
-      - ./data/default:/opt/data
-      # Socket Docker para usar Docker backend en comandos del agente
+      - ./data/leader:/opt/data
+      - ./workspace/leader:/workspace:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
     networks:
-      - hermes-net
+      hermes-net:
+        aliases: [leader]
 
-    healthcheck:
-      test: ["/opt/healthcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      start_period: 60s
-      retries: 3
+    working_dir: /workspace
 
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
+    healthcheck: *hermes-healthcheck
+    logging: *hermes-logging
 
-  # ──────────────────────────────────────────────────────────
-  # AGENTE CODER — especialista en desarrollo de software
-  # Activo con: --profile coder
+  # ============================================================
+  # CODER — Implementador full-stack
+  # Activo con: --profile coder | --profile team | --profile full
   # Puerto host: 8643 (API) | 9120 (Dashboard)
-  # ──────────────────────────────────────────────────────────
+  # ============================================================
   hermes-coder:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: hermes-agent-custom:latest
+    <<: *hermes-build
     container_name: hermes-coder
     hostname: hermes-coder
     restart: unless-stopped
     command: gateway run
-    profiles: ["coder", "all"]
+    profiles: ["coder", "team", "full"]
 
     environment:
+      <<: [*hermes-llm, *hermes-mcp, *hermes-gateway]
       HERMES_PROFILE: "coder"
-      HERMES_HOME: "/opt/data"
-
-      ANTHROPIC_API_KEY:  ${ANTHROPIC_API_KEY:-}
-      OPENAI_API_KEY:     ${OPENAI_API_KEY:-}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-
-      API_SERVER_ENABLED: "true"
-      API_SERVER_HOST:    "0.0.0.0"
-      API_SERVER_PORT:    "8642"
-      API_SERVER_KEY:     ${HERMES_CODER_API_KEY:?Requerido: HERMES_CODER_API_KEY}
-      API_SERVER_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost}
-
-      HERMES_DASHBOARD:      ${HERMES_DASHBOARD:-1}
-      HERMES_DASHBOARD_HOST: "0.0.0.0"
-      HERMES_DASHBOARD_PORT: "9119"
-
-      TELEGRAM_TOKEN:  ${HERMES_CODER_TELEGRAM_TOKEN:-}
-      DISCORD_TOKEN:   ${HERMES_CODER_DISCORD_TOKEN:-}
+      HERMES_HOME:    "/opt/data"
+      NPM_TOKEN:      ${NPM_TOKEN:-}
+      TELEGRAM_TOKEN: ${HERMES_CODER_TELEGRAM_TOKEN:-}
+      DISCORD_TOKEN:  ${HERMES_CODER_DISCORD_TOKEN:-}
 
     ports:
       - "${HERMES_CODER_API_PORT:-8643}:8642"
@@ -133,58 +150,39 @@ services:
 
     volumes:
       - ./data/coder:/opt/data
+      - ./workspace/coder:/workspace:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
     networks:
-      - hermes-net
+      hermes-net:
+        aliases: [coder]
 
-    healthcheck:
-      test: ["/opt/healthcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      start_period: 60s
-      retries: 3
+    working_dir: /workspace
 
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
+    depends_on:
+      hermes-leader:
+        condition: service_healthy
 
-  # ──────────────────────────────────────────────────────────
-  # AGENTE RESEARCHER — especialista en investigación y análisis
-  # Activo con: --profile researcher
+    healthcheck: *hermes-healthcheck
+    logging: *hermes-logging
+
+  # ============================================================
+  # RESEARCHER — Investigación y análisis técnico
+  # Activo con: --profile researcher | --profile team | --profile full
   # Puerto host: 8644 (API) | 9121 (Dashboard)
-  # ──────────────────────────────────────────────────────────
+  # ============================================================
   hermes-researcher:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: hermes-agent-custom:latest
+    <<: *hermes-build
     container_name: hermes-researcher
     hostname: hermes-researcher
     restart: unless-stopped
     command: gateway run
-    profiles: ["researcher", "all"]
+    profiles: ["researcher", "team", "full"]
 
     environment:
+      <<: [*hermes-llm, *hermes-mcp, *hermes-gateway]
       HERMES_PROFILE: "researcher"
-      HERMES_HOME: "/opt/data"
-
-      ANTHROPIC_API_KEY:  ${ANTHROPIC_API_KEY:-}
-      OPENAI_API_KEY:     ${OPENAI_API_KEY:-}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-
-      API_SERVER_ENABLED: "true"
-      API_SERVER_HOST:    "0.0.0.0"
-      API_SERVER_PORT:    "8642"
-      API_SERVER_KEY:     ${HERMES_RESEARCHER_API_KEY:?Requerido: HERMES_RESEARCHER_API_KEY}
-      API_SERVER_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost}
-
-      HERMES_DASHBOARD:      ${HERMES_DASHBOARD:-1}
-      HERMES_DASHBOARD_HOST: "0.0.0.0"
-      HERMES_DASHBOARD_PORT: "9119"
-
+      HERMES_HOME:    "/opt/data"
       TELEGRAM_TOKEN: ${HERMES_RESEARCHER_TELEGRAM_TOKEN:-}
       DISCORD_TOKEN:  ${HERMES_RESEARCHER_DISCORD_TOKEN:-}
 
@@ -194,60 +192,42 @@ services:
 
     volumes:
       - ./data/researcher:/opt/data
+      - ./workspace/researcher:/workspace:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
     networks:
-      - hermes-net
+      hermes-net:
+        aliases: [researcher]
 
-    healthcheck:
-      test: ["/opt/healthcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      start_period: 60s
-      retries: 3
+    working_dir: /workspace
 
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
+    depends_on:
+      hermes-leader:
+        condition: service_healthy
 
-  # ──────────────────────────────────────────────────────────
-  # AGENTE ASSISTANT — asistente personal general
-  # Activo con: --profile assistant
+    healthcheck: *hermes-healthcheck
+    logging: *hermes-logging
+
+  # ============================================================
+  # ASSISTANT — Soporte operativo y documentación
+  # Activo con: --profile assistant | --profile team | --profile full
   # Puerto host: 8645 (API) | 9122 (Dashboard)
-  # ──────────────────────────────────────────────────────────
+  # ============================================================
   hermes-assistant:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: hermes-agent-custom:latest
+    <<: *hermes-build
     container_name: hermes-assistant
     hostname: hermes-assistant
     restart: unless-stopped
     command: gateway run
-    profiles: ["assistant", "all"]
+    profiles: ["assistant", "team", "full"]
 
     environment:
+      <<: [*hermes-llm, *hermes-mcp, *hermes-gateway]
       HERMES_PROFILE: "assistant"
-      HERMES_HOME: "/opt/data"
-
-      ANTHROPIC_API_KEY:  ${ANTHROPIC_API_KEY:-}
-      OPENAI_API_KEY:     ${OPENAI_API_KEY:-}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-
-      API_SERVER_ENABLED: "true"
-      API_SERVER_HOST:    "0.0.0.0"
-      API_SERVER_PORT:    "8642"
-      API_SERVER_KEY:     ${HERMES_ASSISTANT_API_KEY:?Requerido: HERMES_ASSISTANT_API_KEY}
-      API_SERVER_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost}
-
-      HERMES_DASHBOARD:      ${HERMES_DASHBOARD:-1}
-      HERMES_DASHBOARD_HOST: "0.0.0.0"
-      HERMES_DASHBOARD_PORT: "9119"
-
+      HERMES_HOME:    "/opt/data"
       TELEGRAM_TOKEN: ${HERMES_ASSISTANT_TELEGRAM_TOKEN:-}
       DISCORD_TOKEN:  ${HERMES_ASSISTANT_DISCORD_TOKEN:-}
+      SLACK_BOT_TOKEN: ${HERMES_ASSISTANT_SLACK_TOKEN:-}
 
     ports:
       - "${HERMES_ASSISTANT_API_PORT:-8645}:8642"
@@ -255,39 +235,84 @@ services:
 
     volumes:
       - ./data/assistant:/opt/data
+      - ./workspace/assistant:/workspace:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
     networks:
-      - hermes-net
+      hermes-net:
+        aliases: [assistant]
 
-    healthcheck:
-      test: ["/opt/healthcheck.sh"]
-      interval: 30s
-      timeout: 10s
-      start_period: 60s
-      retries: 3
+    working_dir: /workspace
 
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
+    depends_on:
+      hermes-leader:
+        condition: service_healthy
 
-  # ──────────────────────────────────────────────────────────
-  # NGINX — reverse proxy para todos los agentes
-  # Activo con: --profile proxy
-  # Rutas:
-  #   /default/*   → hermes-default:8642
-  #   /coder/*     → hermes-coder:8642
-  #   /researcher/*→ hermes-researcher:8642
-  #   /assistant/* → hermes-assistant:8642
-  # ──────────────────────────────────────────────────────────
+    healthcheck: *hermes-healthcheck
+    logging: *hermes-logging
+
+  # ============================================================
+  # REVIEWER — Quality Gate: revisión de código y QA
+  # Activo con: --profile reviewer | --profile team | --profile full
+  # Puerto host: 8646 (API) | 9123 (Dashboard)
+  # ============================================================
+  hermes-reviewer:
+    <<: *hermes-build
+    container_name: hermes-reviewer
+    hostname: hermes-reviewer
+    restart: unless-stopped
+    command: gateway run
+    profiles: ["reviewer", "team", "full"]
+
+    environment:
+      <<: [*hermes-llm, *hermes-mcp, *hermes-gateway]
+      HERMES_PROFILE: "reviewer"
+      HERMES_HOME:    "/opt/data"
+      TELEGRAM_TOKEN: ${HERMES_REVIEWER_TELEGRAM_TOKEN:-}
+      DISCORD_TOKEN:  ${HERMES_REVIEWER_DISCORD_TOKEN:-}
+
+    ports:
+      - "${HERMES_REVIEWER_API_PORT:-8646}:8642"
+      - "${HERMES_REVIEWER_DASH_PORT:-9123}:9119"
+
+    volumes:
+      - ./data/reviewer:/opt/data
+      - ./workspace/reviewer:/workspace:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    networks:
+      hermes-net:
+        aliases: [reviewer]
+
+    working_dir: /workspace
+
+    depends_on:
+      hermes-leader:
+        condition: service_healthy
+
+    healthcheck: *hermes-healthcheck
+    logging: *hermes-logging
+
+  # ============================================================
+  # NGINX — Reverse proxy unificado
+  # Activo con: --profile proxy | --profile full
+  #
+  # Rutas disponibles:
+  #   http://localhost/leader/*     → hermes-leader API
+  #   http://localhost/coder/*      → hermes-coder API
+  #   http://localhost/researcher/* → hermes-researcher API
+  #   http://localhost/assistant/*  → hermes-assistant API
+  #   http://localhost/reviewer/*   → hermes-reviewer API
+  #   http://localhost/v1/*         → hermes-leader API (alias)
+  #
+  # Regenerar config: ./scripts/generate-nginx-conf.sh
+  # ============================================================
   nginx-proxy:
     image: nginx:1.27-alpine
     container_name: hermes-proxy
     hostname: hermes-proxy
     restart: unless-stopped
-    profiles: ["proxy", "all"]
+    profiles: ["proxy", "full"]
 
     ports:
       - "${PROXY_HTTP_PORT:-80}:80"
@@ -301,7 +326,7 @@ services:
       - hermes-net
 
     depends_on:
-      hermes-default:
+      hermes-leader:
         condition: service_healthy
 
     logging:
@@ -310,7 +335,22 @@ services:
         max-size: "5m"
         max-file: "3"
 
-# ── Red compartida entre todos los agentes ─────────────────
+# ==============================================================
+# VOLÚMENES POR PERFIL
+# Cada agente tiene su propio workspace aislado
+# ==============================================================
+volumes:
+  workspace-leader:
+  workspace-coder:
+  workspace-researcher:
+  workspace-assistant:
+  workspace-reviewer:
+
+# ==============================================================
+# RED INTERNA
+# Los agentes se comunican por hostname:
+#   hermes-leader, hermes-coder, hermes-researcher, etc.
+# ==============================================================
 networks:
   hermes-net:
     name: hermes-network

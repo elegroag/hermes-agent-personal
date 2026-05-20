@@ -6,11 +6,12 @@
 #   1. Verificar que el proceso hermes esté corriendo
 #   2. Si API_SERVER_ENABLED=true, verificar el endpoint HTTP
 #   3. Verificar que el directorio de datos sea accesible
-# ============================================================
+# ==============================================================
 set -uo pipefail
 
 API_PORT="${API_SERVER_PORT:-8642}"
 API_KEY="${API_SERVER_KEY:-}"
+HERMES_HOME="${HERMES_HOME:-/opt/data}"
 
 # ── 1. Verificar proceso hermes ─────────────────────────────
 if ! pgrep -f "hermes" > /dev/null 2>&1; then
@@ -42,7 +43,6 @@ if [[ "${API_SERVER_ENABLED:-false}" == "true" ]]; then
 fi
 
 # ── 3. Verificar acceso al directorio de datos ──────────────
-HERMES_HOME="${HERMES_HOME:-/opt/data}"
 if [[ -d "${HERMES_HOME}" ]] && [[ -w "${HERMES_HOME}" ]]; then
     echo "HEALTHY: proceso activo y datos accesibles"
     exit 0

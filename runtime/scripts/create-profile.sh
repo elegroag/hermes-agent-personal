@@ -110,6 +110,7 @@ EOF
 echo -e "  ${GREEN}✓${NC} config.yaml creado para perfil '${PROFILE_NAME}'"
 
 # ── Generar bloque docker-compose para el nuevo perfil ────────
+UPPER_NAME=$(echo "${PROFILE_NAME}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
 COMPOSE_BLOCK="
   # ── Agente: ${PROFILE_NAME} ──────────────────────────────
   hermes-${PROFILE_NAME}:
@@ -124,34 +125,28 @@ COMPOSE_BLOCK="
     profiles: [\"${PROFILE_NAME}\", \"all\"]
 
     environment:
+      <<: [*hermes-llm, *hermes-mcp, *hermes-gateway]
       HERMES_PROFILE: \"${PROFILE_NAME}\"
       HERMES_HOME: \"/opt/data\"
-      ANTHROPIC_API_KEY:  \${ANTHROPIC_API_KEY:-}
-      OPENAI_API_KEY:     \${OPENAI_API_KEY:-}
-      OPENROUTER_API_KEY: \${OPENROUTER_API_KEY:-}
-      API_SERVER_ENABLED: \"true\"
-      API_SERVER_HOST:    \"0.0.0.0\"
-      API_SERVER_PORT:    \"8642\"
-      API_SERVER_KEY:     \${HERMES_$(echo "${PROFILE_NAME}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')_API_KEY:?Requerido}
-      HERMES_DASHBOARD:      \${HERMES_DASHBOARD:-1}
-      HERMES_DASHBOARD_HOST: \"0.0.0.0\"
-      HERMES_DASHBOARD_PORT: \"9119\"
-      TELEGRAM_TOKEN: \${HERMES_$(echo "${PROFILE_NAME}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')_TELEGRAM_TOKEN:-}
-      DISCORD_TOKEN:  \${HERMES_$(echo "${PROFILE_NAME}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')_DISCORD_TOKEN:-}
+      TELEGRAM_TOKEN: \${HERMES_${UPPER_NAME}_TELEGRAM_TOKEN:-}
+      DISCORD_TOKEN:  \${HERMES_${UPPER_NAME}_DISCORD_TOKEN:-}
 
     ports:
-      - \"\${HERMES_$(echo "${PROFILE_NAME}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')_API_PORT:-${API_PORT}}:8642\"
-      - \"\${HERMES_$(echo "${PROFILE_NAME}" | tr '[:lower:]' '[:upper:]' | tr '-' '_')_DASH_PORT:-${DASH_PORT}}:9119\"
+      - \"\${HERMES_${UPPER_NAME}_API_PORT:-${API_PORT}}:8642\"
+      - \"\${HERMES_${UPPER_NAME}_DASH_PORT:-${DASH_PORT}}:9119\"
 
     volumes:
       - ./data/${PROFILE_NAME}:/opt/data
+      - ./workspace/${PROFILE_NAME}:/workspace:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
     networks:
       - hermes-net
 
+    working_dir: /workspace
+
     healthcheck:
-      test: [\"/opt/healthcheck.sh\"]
+      test: [\"CMD\", \"/opt/healthcheck.sh\"]
       interval: 30s
       timeout: 10s
       start_period: 60s
