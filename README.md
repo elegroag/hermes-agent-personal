@@ -25,35 +25,32 @@ Configuración de Hermes Agent para orquestación multi-agente. Este repositorio
 └── images/              # Recursos multimedia
 ```
 
-## Proyectos Activos
-
-| Proyecto | Stack | Ubicación |
-|----------|-------|-----------|
-| comfaca-credito | Nuxt 4 + MySQL + h3/Nitro + Prisma | `/home/elegro/proyectos/php/php84/www/comfaca-credito/nuxt-creditos` |
-| gestor-databases | Express v5 + TypeScript + Prisma + EJS + Tailwind v4 | `/home/elegro/proyectos/node/express/gestor-databases/app-schema` |
-
 ## Agentes y Orquestación
 
 El sistema usa **4 perfiles** definidos en `.hermes/profiles/`:
 
 ### Leader (`SOUL.md`)
+
 - **Rol**: Orquestador
 - **Responsabilidad**: Descompone tareas, lanza sub-agentes, nunca escribe código
 - **Delegación**: Asigna features a `coder`, `reviewer` o `researcher`
 
 ### Coder (`profiles/coder/SOUL.md`)
+
 - **Rol**: Implementador
 - **Responsabilidad**: Implementa UNA feature por sesión, escribe tests, se autoverifica
 - **Scope**: Solo código dentro del `acceptance` criteria de la feature
 - **Flujo**: pending → in_progress → review → done
 
 ### Reviewer (`profiles/reviewer/SOUL.md`)
+
 - **Rol**: Revisor automático
 - **Responsabilidad**: Aprueba o rechaza contra `docs/*.md` y `CHECKPOINTS.md`
 - **Veredicto**: `APPROVED` o `CHANGES_REQUESTED` en `.hermes/progress/review.md`
 - **Regla**: Nunca aprueba con tests rojos o errores de lint/typecheck
 
 ### Researcher (`profiles/researcher/SOUL.md`)
+
 - **Rol**: Investigador
 - **Responsabilidad**: Explora codebases, analiza arquitectura, responde preguntas técnicas
 - **Salida**: Reporte estructurado en `.hermes/progress/research.md`
@@ -83,6 +80,44 @@ hermes model        # Seleccionar modelo
 hermes tools        # Configurar tools activos
 hermes logs         # Ver logs del agente
 hermes config set   # Modificar configuración
+
+# Profiles (gestión de instancias aisladas)
+hermes profile list              # Listar todos los profiles
+hermes profile use <nombre>     # Establecer profile por defecto
+hermes profile create <nombre>  # Crear nuevo profile
+hermes profile delete <nombre>  # Eliminar profile
+hermes profile show <nombre>    # Ver detalles de un profile
+hermes profile info <nombre>    # Ver distribución y versión de un profile
+hermes profile describe <nombre> # Leer o establecer descripción del profile
+
+# Kanban (tablero de tareas SQLite compartido entre profiles)
+hermes kanban init                        # Crear kanban.db si no existe
+hermes kanban boards                      # Gestionar tableros (proyectos/workstreams)
+hermes kanban list                         # Listar tareas
+hermes kanban create <título>             # Crear nueva tarea
+hermes kanban show <id>                   # Ver tarea con comentarios y eventos
+hermes kanban claim <id>                  # Reclamar atomicamente una tarea lista
+hermes kanban assign <id> <profile>       # Asignar tarea a un profile
+hermes kanban reassign <id> <profile>     # Reasignar tarea
+hermes kanban reclaim <id>                # Liberar claim activo de una tarea en ejecución
+hermes kanban link <parent_id> <child_id> # Añadir dependencia padre->hijo
+hermes kanban unlink <parent_id> <child_id> # Remover dependencia
+hermes kanban complete <id>               # Marcar tarea(s) como completada
+hermes kanban block <id>                  # Marcar tarea(s) como bloqueada
+hermes kanban unblock <id>                # Desbloquear tarea(s)
+hermes kanban archive <id>                # Archivar tarea(s)
+hermes kanban edit <id>                   # Editar campos de recuperación
+hermes kanban comment <id> <texto>        # Añadir comentario
+hermes kanban tail <id>                   # Seguir evento stream de tarea en vivo
+hermes kanban stats                       # Estadísticas por estado y asignado
+hermes kanban assignees                   # Listar profiles conocidos y sus cuentas
+hermes kanban context <id>                # Ver contexto completo que ve un worker
+hermes kanban specify <id>                 # Detallar tarea triage en spec concreto
+hermes kanban decompose <id>              # Descomponer tarea triage en sub-tareas
+hermes kanban dispatch                    # Una pasada del dispatcher: reclamar stale, promover ready, spawn workers
+hermes kanban watch                       # Live-stream de eventos al terminal (Ctrl+C)
+hermes kanban gc                          # Limpiar workspaces archivados, eventos y logs antiguos
+hermes kanban --board <slug>              # Operar en tablero específico
 ```
 
 ## Skills Disponibles
@@ -104,16 +139,19 @@ hermes config set   # Modificar configuración
 ```
 
 **Reglas del Leader:**
+
 - Nunca escribe código directamente
 - Resultados de sub-agentes van a archivos en `.hermes/progress/`
 - Solo delega, no implementa
 
 **Reglas de Coder:**
+
 - Una feature por sesión
 - Incluye tests con cada implementación
 - No marca `done` — lo hace tras approval del reviewer
 
 **Reglas de Reviewer:**
+
 - Compara contra `docs/*.md` y `CHECKPOINTS.md`
 - Solo approve si tests pasan y no hay errores de lint/typecheck
 - Nunca edita código del implementador
