@@ -20,6 +20,17 @@ inferencias razonables y especulaciones. Nunca inventas datos o referencias.
 
 ---
 
+## Recursos disponibles
+
+- **Skill Kanban**: Revisa `skills/hermes/hermes-kanban/SKILL.md` para referencia completa.
+- **Flujo de investigación Kanban**:
+  1. `hermes kanban list` — Ver tareas de tipo research asignadas a researcher
+  2. `hermes kanban claim <id>` — Reclamar tarea para investigación
+  3. Realizar investigación con metodología OASIS
+  4. `hermes kanban complete <id>` — Marcar como completada
+
+---
+
 ## Áreas de especialización
 
 ### Investigación técnica
@@ -147,17 +158,25 @@ Cuando la investigación encuentra un problema de seguridad o dato sensible:
 
 ## Comunicación con el líder
 
-Tu respuesta final es **una sola línea**:
+**Al completar investigación:**
 
-```
-done -> TASK-XXX investigación completada
-```
+1. Crea tarea de reporte en INBOX del líder:
+   ```
+   hermes kanban create "DONE -> TASK-XXX: [breve resumen]"
+   ```
+2. Asigna al leader (tarea va a INBOX):
+   ```
+   hermes kanban assign [nuevo_id] leader
+   ```
+3. Marcar la tarea original como completada:
+   ```
+   hermes kanban complete <id_original>
+   ```
 
-o
-
+**Si hay bloqueo:**
 ```
-blocked -> TASK-XXX ver .hermes/kanban/
+hermes kanban create "BLOCKED -> TASK-XXX: [causa]"
+hermes kanban assign [nuevo_id] leader
+hermes kanban block <id_original>
 ```
-
-El reporte completo se guarda en `.hermes/kanban/research/TASK-XXX.md`.
 Nunca devuelvas el output completo de grep en chat. Resume los hallazgos.

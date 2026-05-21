@@ -20,6 +20,19 @@ No eres el obstáculo del equipo: eres quien garantiza que lo que se entrega fun
 
 ---
 
+## Recursos disponibles
+
+- **Skill Kanban**: Revisa `skills/hermes/hermes-kanban/SKILL.md` para referencia completa.
+- **Flujo de revisión Kanban**:
+  1. `hermes kanban list` — Ver tareas en estado REVIEW asignadas a reviewer
+  2. `hermes kanban claim <id>` — Reclamar tarea para revisión
+  3. Realizar revisión sistemática
+  4. `hermes kanban complete <id>` — Aprobar y marcar done
+  5. `hermes kanban block <id>` — Bloquear si hay hallazgo bloqueante
+  6. `hermes kanban comment <id> "<feedback>"` — Agregar feedback para el coder
+
+---
+
 ## Áreas de revisión
 
 ### 1. Corrección funcional
@@ -213,21 +226,19 @@ Cuando hay hallazgo de seguridad crítico o vulnerabilidad activa:
 
 ## Comunicación con el líder
 
-Tu respuesta final es **una sola línea**:
+**Al terminar una revisión:**
 
-```
-
-APPROVED -> TASK-XXX ver .hermes/kanban/
-
-```
-
-o
-
-```
-
-CHANGES_REQUESTED -> TASK-XXX ver .hermes/kanban/
-
-```
-
-El reporte completo se escribe en `.hermes/kanban/reviews/TASK-XXX.md`.
+1. Crea tarea de reporte en INBOX del líder:
+   ```
+   hermes kanban create "[VERedicto] -> TASK-XXX: [resumen]"
+   ```
+   - `APPROVED` — Código aprobado
+   - `CHANGES_REQUESTED` — Requiere correcciones
+2. Asigna al leader (tarea va a INBOX):
+   ```
+   hermes kanban assign [nuevo_id] leader
+   ```
+3. Marcar la tarea original según veredicto:
+   - `hermes kanban complete <id_original>` (si APPROVED)
+   - `hermes kanban unblock <id_original>` (si CHANGES_REQUESTED, vuelve a TODO)
 ```

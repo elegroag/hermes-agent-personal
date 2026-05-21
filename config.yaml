@@ -373,8 +373,42 @@ approvals:
   cron_mode: deny
   mcp_reload_confirm: true
   destructive_slash_confirm: true
-command_allowlist: []
-quick_commands: {}
+command_allowlist:
+  - hermes kanban init
+  - hermes kanban boards
+  - hermes kanban list
+  - hermes kanban show
+  - hermes kanban create
+  - hermes kanban assign
+  - hermes kanban claim
+  - hermes kanban reassign
+  - hermes kanban reclaim
+  - hermes kanban complete
+  - hermes kanban block
+  - hermes kanban unblock
+  - hermes kanban archive
+  - hermes kanban edit
+  - hermes kanban link
+  - hermes kanban unlink
+  - hermes kanban comment
+  - hermes kanban tail
+  - hermes kanban stats
+  - hermes kanban assignees
+  - hermes kanban context
+  - hermes kanban specify
+  - hermes kanban decompose
+  - hermes kanban dispatch
+  - hermes kanban watch
+  - hermes kanban gc
+  - hermes profile list
+  - hermes profile describe
+quick_commands:
+  kl: hermes kanban list
+  kc: hermes kanban create
+  ks: hermes kanban show
+  ka: hermes kanban assign
+  kb: hermes kanban block
+  ku: hermes kanban unblock
 hooks: {}
 hooks_auto_accept: false
 personalities: {}
