@@ -10,7 +10,7 @@ providers:
 fallback_providers: []
 credential_pool_strategies: {}
 toolsets:
-  - hermes-cli
+- hermes-cli
 agent:
   max_turns: 150
   gateway_timeout: 2400
@@ -24,8 +24,7 @@ agent:
   gateway_auto_continue_freshness: 1800
   image_input_mode: auto
   disabled_toolsets: []
-  system_prompt:
-    You are a technical expert. Provide detailed, accurate technical
+  system_prompt: You are a technical expert. Provide detailed, accurate technical
     information.
 terminal:
   backend: local
@@ -237,9 +236,9 @@ display:
   runtime_footer:
     enabled: false
     fields:
-      - model
-      - context_pct
-      - cwd
+    - model
+    - context_pct
+    - cwd
   copy_shortcut: auto
 dashboard:
   theme: default
@@ -319,7 +318,7 @@ goals:
   max_turns: 20
 skills:
   external_dirs:
-    - ~/.agents/skills
+  - ~/.agents/skills
   template_vars: true
   inline_shell: false
   inline_shell_timeout: 10
@@ -425,7 +424,8 @@ sessions:
   vacuum_after_prune: true
   min_interval_hours: 24
 onboarding:
-  seen: {}
+  seen:
+    tool_progress_prompt: true
 updates:
   pre_update_backup: false
   backup_keep: 5
@@ -443,49 +443,49 @@ _config_version: 23
 mcp_servers:
   backbone-doc-resource:
     args:
-      - -y
-      - tsx
-      - ${HOME_USER}/Mcp/Backbone/src/server.ts
+    - -y
+    - tsx
+    - ${HOME_USER}/Mcp/Backbone/src/server.ts
     command: npx
   bash:
     args:
-      - bash-mcp
+    - bash-mcp
     command: npx
     env:
       BASH_MCP_MAX_OUTPUT_SIZE: '102400'
-      BASH_MCP_TEMP_DIR: '${HOME_USER}/Downloads'
+      BASH_MCP_TEMP_DIR: ${HOME_USER}/Downloads
   chrome-devtools:
     args:
-      - -y
-      - chrome-devtools-mcp@latest
-      - --slim
-      - --headless
+    - -y
+    - chrome-devtools-mcp@latest
+    - --slim
+    - --headless
     command: npx
   context7:
     args:
-      - context7 uses streamable-http - configured via headers inHermes
+    - context7 uses streamable-http - configured via headers inHermes
     command: echo
     headers:
-      Authorization: 'Bearer ${CONTEXT7_API_KEY}'
+      Authorization: Bearer ${CONTEXT7_API_KEY}
     url: https://mcp.context7.com/mcp
   filesystem:
     args:
-      - -y
-      - '@modelcontextprotocol/server-filesystem'
-      - ${HOME_USER}/proyectos/
-      - ${HOME_USER}/Downloads
+    - -y
+    - '@modelcontextprotocol/server-filesystem'
+    - ${HOME_USER}/proyectos/
+    - ${HOME_USER}/Downloads
     command: npx
   github:
     args:
-      - -y
-      - '@modelcontextprotocol/server-github'
+    - -y
+    - '@modelcontextprotocol/server-github'
     command: npx
     env:
-      GITHUB_PERSONAL_ACCESS_TOKEN: '${GITHUB_TOKEN}'
+      GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_TOKEN}
   memory:
     args:
-      - -y
-      - '@modelcontextprotocol/server-memory'
+    - -y
+    - '@modelcontextprotocol/server-memory'
     command: npx
     env:
-      MEMORY_FILE_PATH: '${HOME_USER}/Mcp/memory.json'
+      MEMORY_FILE_PATH: ${HOME_USER}/Mcp/memory.json

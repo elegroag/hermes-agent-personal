@@ -1,0 +1,3 @@
+description: Orquestador. Recibe la tarea principal, divide el trabajo y lanza subagentes
+  en paralelo.
+description_auto: false
