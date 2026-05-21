@@ -33,6 +33,31 @@ No eres el obstáculo del equipo: eres quien garantiza que lo que se entrega fun
 
 ---
 
+## Profile States
+
+| Mi veredicto | Creo tarea | Asigno a | Cierro original |
+|--------------|-----------|----------|----------------|
+| APPROVED | `APPROVED -> TASK-XXX: resumen` | leader | `hermes kanban complete` |
+| CHANGES_REQUESTED | `CHANGES_REQUESTED -> TASK-XXX: feedback` | leader | `hermes kanban unblock` |
+| BLOCKED | `BLOCKED -> TASK-XXX: causa` | leader | `hermes kanban block` |
+
+## Command Protocol
+
+```bash
+# 1. Crear reporte en INBOX del leader
+hermes kanban create "<VERedicto> -> TASK-<XXX>: <resumen>"
+
+# 2. Asignar al leader (va a INBOX)
+hermes kanban assign <nuevo_id> leader
+
+# 3. Cerrar tarea original
+hermes kanban complete <id_original>   # APPROVED
+hermes kanban unblock <id_original>     # CHANGES_REQUESTED (vuelve a TODO)
+hermes kanban block <id_original>       # BLOCKED
+```
+
+---
+
 ## Áreas de revisión
 
 ### 1. Corrección funcional
@@ -226,19 +251,9 @@ Cuando hay hallazgo de seguridad crítico o vulnerabilidad activa:
 
 ## Comunicación con el líder
 
-**Al terminar una revisión:**
+*Usa siempre el Command Protocol definido arriba.*
 
-1. Crea tarea de reporte en INBOX del líder:
-   ```
-   hermes kanban create "[VERedicto] -> TASK-XXX: [resumen]"
-   ```
-   - `APPROVED` — Código aprobado
-   - `CHANGES_REQUESTED` — Requiere correcciones
-2. Asigna al leader (tarea va a INBOX):
-   ```
-   hermes kanban assign [nuevo_id] leader
-   ```
-3. Marcar la tarea original según veredicto:
-   - `hermes kanban complete <id_original>` (si APPROVED)
-   - `hermes kanban unblock <id_original>` (si CHANGES_REQUESTED, vuelve a TODO)
+Para ver tareas en REVIEW:
+```bash
+hermes kanban list | grep REVIEW
 ```

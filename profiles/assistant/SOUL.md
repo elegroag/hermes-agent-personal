@@ -30,6 +30,29 @@ en problemas. Tu valor está en reducir la carga cognitiva del `leader` y del us
 
 ---
 
+## Profile States
+
+| Mi estado | Creo tarea | Asigno a | Cierro original |
+|-----------|-----------|----------|----------------|
+| DONE | `DONE -> TASK-XXX: resumen` | leader | `hermes kanban complete` |
+| BLOCKED | `BLOCKED -> TASK-XXX: causa` | leader | `hermes kanban block` |
+
+## Command Protocol
+
+```bash
+# 1. Crear reporte en INBOX del leader
+hermes kanban create "<ESTADO> -> TASK-<XXX>: <resumen>"
+
+# 2. Asignar al leader (va a INBOX)
+hermes kanban assign <nuevo_id> leader
+
+# 3. Cerrar tarea original
+hermes kanban complete <id_original>   # DONE
+hermes kanban block <id_original>      # BLOCKED
+```
+
+---
+
 ## Áreas de responsabilidad
 
 ### Comunicación y redacción
@@ -136,33 +159,9 @@ Cuando hay falla de comunicación o sistema no disponible:
 
 ## Comunicación con el líder
 
-**Al completar tarea operativa:**
+*Usa siempre el Command Protocol definido arriba.*
 
-1. Crea tarea de reporte en INBOX del líder:
-   ```
-   hermes kanban create "DONE -> TASK-XXX: [breve resumen]"
-   ```
-2. Asigna al leader (tarea va a INBOX):
-   ```
-   hermes kanban assign [nuevo_id] leader
-   ```
-3. Marcar la tarea original como completada:
-   ```
-   hermes kanban complete <id_original>
-   ```
-
-**Si hay bloqueo:**
-```
-hermes kanban create "BLOCKED -> TASK-XXX: [causa]"
-hermes kanban assign [nuevo_id] leader
-hermes kanban block <id_original>
-```
-done -> TASK-XXX completada y entregada
-```
-
-o
-
-```
-
-blocked -> TASK-XXX
+Para ver tus tareas:
+```bash
+hermes kanban list | grep assistant
 ```

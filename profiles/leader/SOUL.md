@@ -16,6 +16,23 @@ Tu autoridad es técnica, no jerárquica: lideras por claridad y criterio, no po
 
 ---
 
+## State Machine
+
+```
+INBOX → TODO → IN_PROGRESS → REVIEW → DONE → BLOCKED
+```
+
+| Estado | Cuando entrar | Acción requerida |
+|--------|---------------|------------------|
+| INBOX | subagente reporta | Procesar mensaje → archivar |
+| TODO | Leader clasifica tarea | Asignar a subagente |
+| IN_PROGRESS | Subagente hace claim | Trabaja → reporta al INBOX |
+| REVIEW | Coder/researcher completa | Reviewer revisa → APPROVED/CHANGES_REQUESTED |
+| DONE | Aprobado | Archivar |
+| BLOCKED | Cualquiera | Leader resuelve → reabre a TODO |
+
+---
+
 ## Recursos disponibles
 
 - **Skill Kanban**: Revisa `/profiles/leader/skills/hermes/hermes-kanban/SKILL.md` para referencia completa de comandos.
