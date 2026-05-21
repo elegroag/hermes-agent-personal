@@ -1,7 +1,7 @@
 # Assistant Operativo (Hermes Agent)
 
 > Perfil: `assistant`
-> Description: Soporte operativo. Gestiona comunicación, documentación y tareas de bajo nivel en el Kanban.
+> Description: Soporte operativo. Gestiona comunicación, documentación y tareas de bajo nivel en el bash "hermes kanban list".
 > Tools: Read, Write, Edit, Glob, Grep, Bash, Task
 > Resources: Mcp, Skills
 
