@@ -1,5 +1,5 @@
 model:
-  base_url: ''
+  base_url: https://api.minimax.io/anthropic
   default: MiniMax-M2.7
   provider: minimax
 providers:
@@ -8,7 +8,8 @@ providers:
     retry_delay: 1
     timeout: 120
 fallback_providers: []
-credential_pool_strategies: {}
+credential_pool_strategies:
+  minimax: fill_first
 toolsets:
 - hermes-cli
 agent:
@@ -96,11 +97,12 @@ tool_loop_guardrails:
     idempotent_no_progress: 8
 compression:
   enabled: true
-  threshold: 0.3
+  threshold: 0.5
   target_ratio: 0.15
   protect_last_n: 10
   hygiene_hard_message_limit: 300
   protect_first_n: 2
+  abort_on_summary_failure: false
 prompt_caching:
   cache_ttl: 5m
 openrouter:
@@ -141,14 +143,6 @@ auxiliary:
     api_key: ''
     timeout: 120
     extra_body: {}
-  session_search:
-    provider: minimax
-    model: MiniMax-M2.7
-    base_url: ''
-    api_key: ''
-    timeout: 30
-    extra_body: {}
-    max_concurrency: 3
   skills_hub:
     provider: minimax
     model: MiniMax-M2.7
@@ -205,6 +199,14 @@ auxiliary:
     api_key: ''
     timeout: 600
     extra_body: {}
+  session_search:
+    provider: minimax
+    model: MiniMax-M2.7
+    base_url: ''
+    api_key: ''
+    timeout: 30
+    extra_body: {}
+    max_concurrency: 3
 display:
   compact: true
   personality: technical
@@ -240,13 +242,14 @@ display:
     - context_pct
     - cwd
   copy_shortcut: auto
+  tool_progress: all
 dashboard:
   theme: ember
   show_token_analytics: false
 privacy:
   redact_pii: false
 tts:
-  provider: edge
+  provider: minimax
   edge:
     voice: en-US-AriaNeural
   elevenlabs:
@@ -432,10 +435,13 @@ kanban:
   dispatch_in_gateway: true
   dispatch_interval_seconds: 60
   failure_limit: 2
+  worker_log_rotate_bytes: 2097152
+  worker_log_backup_count: 1
   orchestrator_profile: ''
   default_assignee: ''
   auto_decompose: true
   auto_decompose_per_tick: 3
+  dispatch_stale_timeout_seconds: 14400
 code_execution:
   mode: project
 logging:
@@ -457,6 +463,7 @@ sessions:
   retention_days: 30
   vacuum_after_prune: true
   min_interval_hours: 24
+  write_json_snapshots: false
 onboarding:
   seen: {}
 updates:
@@ -472,6 +479,14 @@ x_search:
   model: grok-4.20-reasoning
   timeout_seconds: 180
   retries: 2
+secrets:
+  bitwarden:
+    enabled: false
+    access_token_env: BWS_ACCESS_TOKEN
+    project_id: ''
+    cache_ttl_seconds: 300
+    override_existing: true
+    auto_install: true
 _config_version: 23
 mcp_servers:
   backbone-doc-resource:
@@ -522,6 +537,32 @@ mcp_servers:
     command: npx
     env:
       MEMORY_FILE_PATH: ${HOME_USER}/Mcp/memory.json
+session_reset:
+  mode: both
+  idle_minutes: 1440
+  at_hour: 4
+platform_toolsets:
+  cli:
+  - browser
+  - clarify
+  - code_execution
+  - computer_use
+  - cronjob
+  - delegation
+  - file
+  - image_gen
+  - memory
+  - messaging
+  - session_search
+  - skills
+  - terminal
+  - todo
+  - tts
+  - vision
+  - web
+known_plugin_toolsets:
+  cli:
+  - spotify
 
 # ── Fallback Model ────────────────────────────────────────────────────
 # Automatic provider failover when primary is unavailable.

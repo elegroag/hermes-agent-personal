@@ -43,3 +43,4 @@ channel_*
 gateway_*
 plugins/
 home/
+.kilo/
