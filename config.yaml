@@ -244,7 +244,7 @@ display:
   copy_shortcut: auto
   tool_progress: all
 dashboard:
-  theme: ember
+  theme: default-large
   show_token_analytics: false
 privacy:
   redact_pii: false
